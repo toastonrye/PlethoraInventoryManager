@@ -9,11 +9,14 @@
 local lib = require("libPIM")
 local myPeripherals = {}
 local manip, chatModule
+local rtInterface, crate
+
 
 local function initPeripherals()
     myPeripherals = {}
 
     -- populates table myPeripherals{} of what is currently seen by the computer
+    shell.run("clear")
     print("Initializing list of connected peripherals!")
     for k, side in pairs(peripheral.getNames()) do
         myPeripherals[k] = {side = side, type = peripheral.getType(side)}
@@ -22,11 +25,14 @@ local function initPeripherals()
 
     -- assign peripherals to variables if they are detected
     for k, v in pairs(myPeripherals) do
+        -- configure plethora manipulator
         if v.type == "manipulator" then
             manip = peripheral.find("manipulator")
         else
             manip = nil
         end
+
+        -- configure general inventories
         if v.type == "randomthings:playerinterface" then
             rtInterface = peripheral.find("randomthings:playerinterface")
         else
@@ -42,7 +48,9 @@ end
 
 local function peripheralAdd()
     while true do
-        local pAdd = {os.pullEvent("peripheral")} -- pAdd not used, this event just runs the rest of the code below...?
+        local pAdd = {os.pullEvent("peripheral")}
+        -- code below only runs if the "filtered" event above fires
+        print("run add")
         initPeripherals()
     end
 end
@@ -50,33 +58,35 @@ end
 local function peripheralRemove()
     while true do
         local pRemove = {os.pullEvent("peripheral_detach")}
+        -- code below only runs if the "filtered" event above fires
+        print("run remove")
         initPeripherals()
     end
 end
 
-local function plethoraInventoryManager()
-    initPeripherals() -- this should run once and only once!? Yes...
+local function chatListener()
     while true do
-        sleep(2)
-        --[[if manip then
-            lib.printBasic(manip.listModules())
-        else
-            print("manip not found")
-        end--]]
+        local _, player, msg, uuid = os.pullEvent("chat_message")
+        if manip then
+            --lib.printBasic(manip.listModules())
+            if manip.hasModule("plethora:chat") then
+                manip.say("Repeating: " .. msg)
+            end
+        end
     end
 end
 
+local function plethoraInventoryManager()
+    initPeripherals() -- runs once, when script starts
+    while true do
+        sleep(3)
+    end
+end
+
+-- parallel is a simple way to run several functions at once. See https://tweaked.cc/module/parallel.html
+parallel.waitForAll(plethoraInventoryManager, peripheralAdd, peripheralRemove, chatListener)
 --[[
-SIDE_PLAYERINTERFACE = "back"
-SIDE_INVENTORY = "right"
-
-
-
-print(crate.getNames)
-crate.pullItems("back", 1)--]]
-
---[[for k,v in pairs(peripheral.getNames()) do
-    print(k,v)
-end--]]
-
-parallel.waitForAll(plethoraInventoryManager, peripheralAdd, peripheralRemove)
+    parallel is interesting, how it yields...
+    sleep() yields to the other functions
+    os.pullEvent yields to other functions, code below only runs if the event is detected
+]]
