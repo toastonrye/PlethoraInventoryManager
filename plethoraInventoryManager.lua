@@ -39,22 +39,16 @@ local function initPeripherals()
         myPeripherals[k] = {side = side, type = peripheral.getType(side)}
     end
     lib.printPeripherals(myPeripherals)
-
     for k, v in pairs(myPeripherals) do
         -- configure plethora manipulator. NOTE: manipulator seems to only be detected if a sensor module is installed..?
         if v.type == "manipulator" then
-            manip = peripheral.find("manipulator")
+            manip = peripheral.find("manipulator") -- strange bug where manipulator isn't always found at position "TOP"
         else
             manip = nil
         end
 
         -- configure general inventories
-        if v.type == "randomthings:playerinterface" then
-            rtInterface = peripheral.find("randomthings:playerinterface")
-        else
-            rtInterface = nil
-        end
-        if v.type == "randomthings:playerinterface" then
+        if v.type == "engineersdecor:te_labeled_crate" then
             crate = peripheral.find("engineersdecor:te_labeled_crate")
         else
             crate = nil
@@ -85,18 +79,13 @@ local function chatListener()
         local _, player, msg, uuid = os.pullEvent("chat_message")
         -- code below only runs if the "filtered" event above fires
         if manip then
-            --lib.printBasic(manip.listModules())
-            --[[if manip.hasModule("plethora:chat") then -- this check doesn't seem to be necessary. event chat_message only exists if module is installed..?
-                manip.tell("Repeating: " .. msg)
-            end--]]
-            if player == "toastonrye" and msg == "intro" then
-                inventoryDump("test")
+            if not manip.hasModule("plethora:chat") then -- this check doesn't seem to be necessary. event chat_message only exists if module is installed..?
+                print("plethora:chat module not installed! It seems like you are trying to use it.")
             end
             if player == "toastonrye" and msg == "dump all" then
                 manip.tell("Is your backpack removed? Enter code to verify: " .. generateCode())
                 print("set code true")
                 codeFlag = true
-            --elseif player == "toastonrye" and msg ~= "dump all" and codeFlag then
             elseif player == "toastonrye" and msg == tostring(codeBackpack) and codeFlag then
                 manip.tell("Correct code entered! Dumping inventory...")
                 inventoryDump("all")
@@ -111,6 +100,9 @@ local function chatListener()
                     manip.tell("Invalid code entered. Try again! Or type cancel.")
                 end
             end
+        else
+            print("The manipulator was not detected?")
+            print(manip)
         end
     end
 end
@@ -118,7 +110,7 @@ end
 local function plethoraInventoryManager()
     initPeripherals() -- runs once, when script starts
     while true do
-        sleep(3)
+        sleep(2)
     end
 end
 
