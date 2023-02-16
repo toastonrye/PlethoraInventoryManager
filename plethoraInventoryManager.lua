@@ -146,9 +146,8 @@ local function plethoraInventoryManager()
 end
 
 
-
+why did it go missing. What else??
 -- parallel is a simple way to run several functions at once. See https://tweaked.cc/module/parallel.html
-parallel.waitForAll(plethoraInventoryManager, peripheralAdd, peripheralRemove, chatListener)
 --[[
     parallel is interesting, how it yields...
     sleep() yields to the other functions
