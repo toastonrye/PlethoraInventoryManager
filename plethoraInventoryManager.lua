@@ -6,10 +6,18 @@
     In Minecraft 1.12.2, Enigmatica 2: Expert - Extended modpack
 --]]
 
+-- =====================================================================================================
+-- ====== THIS SHOULD BE THE ONLY PLACE USERS OF THIS SCRIPT NEED TO MAKE CHANGES ======================
+-- =====================================================================================================
+
+DUMP_INVENTORY_NAME = "engineersdecor:te_labeled_crate" -- set this to the name of your inventory of choice
+
+-- ====== END ==========================================================================================
+
 local lib = require("libPIM")
-local myPeripherals = {}
-local manip, chatModule
-local rtInterface, crate
+local myPeripherals = {} --does the table be made here too or just the init???
+local manip -- the manipulator from plethora
+local dumpInventory -- holds the side of the configured DUMP_INVENTORY_NAME, i.e. "TOP"
 local codeBackpack
 local codeFlag = false
 
@@ -19,13 +27,38 @@ local function generateCode() -- used to verify player truly wants to dump all a
 end
 
 local function inventoryDump(s)
-    manip.tell("Inventory Dump function not fully implemented yet!")
-    if s == "test" then
-        --lib.printBasic(manip.getID())
-        --print(manip.getID())
-        for k, v in pairs(manip.getInventory()) do
-            manip.tell(k, v)
+    if s == "all" then
+        manip.tell("Dumping inventory \"all\"")
+
+        local playerInv = manip.getInventory()
+        local list = playerInv.list()
+        for slot, item in pairs(list) do
+            print(slot, item.name)
+            playerInv.pushItems(dumpInventory, slot)
         end
+
+        local playerEquip = manip.getEquipment()
+        local list = playerEquip.list()
+        for slot, item in pairs(list) do
+            print(slot, item.name)
+            playerEquip.pushItems(dumpInventory, slot)
+        end
+
+        local playerEnder = manip.getEnder()
+        local list = playerEnder.list()
+        for slot, item in pairs(list) do
+            print(slot, item.name)
+            playerEnder.pushItems(dumpInventory, slot)
+        end
+
+        local playerBaubles = manip.getBaubles()
+        local list = playerBaubles.list()
+        for slot, item in pairs(list) do
+            print(slot, item.name)
+            playerBaubles.pushItems(dumpInventory, slot)
+        end
+ 
+        
     end
 end
 
@@ -43,18 +76,17 @@ local function initPeripherals()
         -- configure plethora manipulator. NOTE: manipulator seems to only be detected if a sensor module is installed..?
         if v.type == "manipulator" then
             manip = peripheral.find("manipulator") -- strange bug where manipulator isn't always found at position "TOP"
-        else
-            manip = nil
         end
 
         -- configure general inventories
-        if v.type == "engineersdecor:te_labeled_crate" then
-            crate = peripheral.find("engineersdecor:te_labeled_crate")
-        else
-            crate = nil
+        if v.type == DUMP_INVENTORY_NAME then
+            --dumpInventory = peripheral.find(DUMP_INVENTORY_NAME)
+            dumpInventory = v.side -- try setting crate to the location text, i.e. "TOP"
         end
     end
 end
+
+
 
 local function peripheralAdd()
     while true do
@@ -84,10 +116,9 @@ local function chatListener()
             end
             if player == "toastonrye" and msg == "dump all" then
                 manip.tell("Is your backpack removed? Enter code to verify: " .. generateCode())
-                print("set code true")
                 codeFlag = true
             elseif player == "toastonrye" and msg == tostring(codeBackpack) and codeFlag then
-                manip.tell("Correct code entered! Dumping inventory...")
+                manip.tell("Correct code entered!")
                 inventoryDump("all")
                 codeFlag = false
                 codeBackpack = nil
@@ -113,6 +144,8 @@ local function plethoraInventoryManager()
         sleep(2)
     end
 end
+
+
 
 -- parallel is a simple way to run several functions at once. See https://tweaked.cc/module/parallel.html
 parallel.waitForAll(plethoraInventoryManager, peripheralAdd, peripheralRemove, chatListener)
