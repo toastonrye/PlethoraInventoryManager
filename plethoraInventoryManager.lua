@@ -15,11 +15,9 @@ DUMP_INVENTORY_NAME = "engineersdecor:te_labeled_crate" -- set this to the name 
 -- ====== END ==========================================================================================
 
 local lib = require("libPIM")
-local myPeripherals = {} --does the table be made here too or just the init???
 local manip -- the manipulator from plethora
 local dumpInventory -- holds the side of the configured DUMP_INVENTORY_NAME, i.e. "TOP"
 local codeBackpack
-local codeFlag = false
 
 local function generateCode() -- used to verify player truly wants to dump all and backpack removed
     codeBackpack = math.random(100,999)
@@ -44,12 +42,12 @@ local function inventoryDump(s)
             playerEquip.pushItems(dumpInventory, slot)
         end
 
-        local playerEnder = manip.getEnder()
+        --[[local playerEnder = manip.getEnder()
         local list = playerEnder.list()
         for slot, item in pairs(list) do
             print(slot, item.name)
             playerEnder.pushItems(dumpInventory, slot)
-        end
+        end--]]
 
         local playerBaubles = manip.getBaubles()
         local list = playerBaubles.list()
@@ -57,13 +55,21 @@ local function inventoryDump(s)
             print(slot, item.name)
             playerBaubles.pushItems(dumpInventory, slot)
         end
- 
-        
+    end
+    if s == "2rows" then
+        manip.tell("Dumping inventory 2 top rows")
+
+        local playerInv = manip.getInventory()
+        local list = playerInv.list()
+        for i=10, 27, 1 do
+            print(i, list.name)
+            playerInv.pushItems(dumpInventory, i)
+        end
     end
 end
 
 local function initPeripherals()
-    myPeripherals = {}
+    local myPeripherals = {}
 
     -- populates table myPeripherals{} of what is currently seen by the computer. A manipulator with no modules is not detected..?
     shell.run("clear")
@@ -86,8 +92,6 @@ local function initPeripherals()
     end
 end
 
-
-
 local function peripheralAdd()
     while true do
         local pAdd = {os.pullEvent("peripheral")}
@@ -107,6 +111,8 @@ local function peripheralRemove()
 end
 
 local function chatListener()
+    local codeFlag = false
+    local dumpARGS
     while true do
         local _, player, msg, uuid = os.pullEvent("chat_message")
         -- code below only runs if the "filtered" event above fires
@@ -117,7 +123,8 @@ local function chatListener()
             if player == "toastonrye" and msg == "dump all" then
                 manip.tell("Is your backpack removed? Enter code to verify: " .. generateCode())
                 codeFlag = true
-            elseif player == "toastonrye" and msg == tostring(codeBackpack) and codeFlag then
+                dumpARGS = "all"
+            elseif player == "toastonrye" and msg == tostring(codeBackpack) and codeFlag and dumpARGS == "all" then
                 manip.tell("Correct code entered!")
                 inventoryDump("all")
                 codeFlag = false
@@ -131,6 +138,26 @@ local function chatListener()
                     manip.tell("Invalid code entered. Try again! Or type cancel.")
                 end
             end
+
+            if player == "toastonrye" and msg == "dump 2" then
+                manip.tell("Is your backpack removed? Enter code to verify: " .. generateCode())
+                codeFlag = true
+                dumpARGS = "2rows"
+            elseif player == "toastonrye" and msg == tostring(codeBackpack) and codeFlag and dumpARGS == "2rows" then
+                manip.tell("Correct code entered!")
+                inventoryDump("2rows")
+                codeFlag = false
+                codeBackpack = nil
+            elseif player == "toastonrye" and msg ~= tostring(codeBackpack) and codeFlag then
+                if msg == "cancel" then
+                    manip.tell("Cancelled: dump 2")
+                    codeFlag = false
+                    codeBackpack = nil
+                else
+                    manip.tell("Invalid code entered. Try again! Or type cancel.")
+                end
+            end
+
         else
             print("The manipulator was not detected?")
             print(manip)
@@ -145,9 +172,8 @@ local function plethoraInventoryManager()
     end
 end
 
-
-why did it go missing. What else??
 -- parallel is a simple way to run several functions at once. See https://tweaked.cc/module/parallel.html
+parallel.waitForAll(plethoraInventoryManager, peripheralAdd, peripheralRemove, chatListener)
 --[[
     parallel is interesting, how it yields...
     sleep() yields to the other functions
