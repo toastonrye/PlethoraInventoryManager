@@ -10,7 +10,8 @@
 -- ====== THIS SHOULD BE THE ONLY PLACE USERS OF THIS SCRIPT NEED TO MAKE CHANGES ======================
 -- =====================================================================================================
 
-DUMP_INVENTORY_NAME = "engineersdecor:te_labeled_crate" -- set this to the name of your inventory of choice
+--DUMP_INVENTORY_NAME = "engineersdecor:te_labeled_crate" -- set this to the name of your inventory of choice
+DUMP_INVENTORY_NAME = "ironchest:iron_chest"
 
 -- ====== END ==========================================================================================
 
